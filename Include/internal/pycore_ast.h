@@ -732,6 +732,9 @@ stmt_ty _PyAST_While(expr_ty test, asdl_stmt_seq * body, asdl_stmt_seq *
 stmt_ty _PyAST_If(expr_ty test, asdl_stmt_seq * body, asdl_stmt_seq * orelse,
                   int lineno, int col_offset, int end_lineno, int
                   end_col_offset, PyArena *arena);
+stmt_ty _PyAST_Brrr(asdl_stmt_seq * body,
+                  int lineno, int col_offset, int end_lineno, int
+                  end_col_offset, PyArena *arena);
 stmt_ty _PyAST_With(asdl_withitem_seq * items, asdl_stmt_seq * body, string
                     type_comment, int lineno, int col_offset, int end_lineno,
                     int end_col_offset, PyArena *arena);

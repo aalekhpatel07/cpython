@@ -382,7 +382,7 @@ while_stmt[stmt_ty]:
 
 brrr_stmt[stmt_ty]:
     | invalid_brrr_stmt
-    | 'brrr' ':' b=block { _PyAST_Brrr(b, EXTRA) }
+    | 'brrr' &&':' b=block { _PyAST_Brrr(b, EXTRA) }
 
 # For statement
 # -------------
