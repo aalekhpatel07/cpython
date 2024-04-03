@@ -3097,6 +3097,17 @@ compiler_lambda(struct compiler *c, expr_ty e)
 }
 
 static int
+compiler_brrr(struct compiler *c, stmt_ty s)
+{
+    assert(s->kind == Brrr_kind);
+    NEW_JUMP_TARGET_LABEL(c, end);
+    VISIT_SEQ(c, stmt, s->v.Brrr.body);
+    USE_LABEL(c, end);
+    return SUCCESS;
+}
+
+
+static int
 compiler_if(struct compiler *c, stmt_ty s)
 {
     jump_target_label next;
@@ -4080,6 +4091,8 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         return compiler_while(c, s);
     case If_kind:
         return compiler_if(c, s);
+    case Brrr_kind:
+        return compiler_brrr(c, s);
     case Match_kind:
         return compiler_match(c, s);
     case Raise_kind:

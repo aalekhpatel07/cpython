@@ -89,6 +89,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->Gt_type);
     Py_CLEAR(state->IfExp_type);
     Py_CLEAR(state->If_type);
+    Py_CLEAR(state->Brrr_type);
     Py_CLEAR(state->ImportFrom_type);
     Py_CLEAR(state->Import_type);
     Py_CLEAR(state->In_singleton);
@@ -220,6 +221,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->handlers);
     Py_CLEAR(state->id);
     Py_CLEAR(state->ifs);
+    Py_CLEAR(state->brrs);
     Py_CLEAR(state->is_async);
     Py_CLEAR(state->items);
     Py_CLEAR(state->iter);
@@ -490,6 +492,9 @@ static const char * const If_fields[]={
     "test",
     "body",
     "orelse",
+};
+static const char * const Brrr_fields[]={
+    "body",
 };
 static const char * const With_fields[]={
     "items",
@@ -5525,6 +5530,7 @@ init_types(struct ast_state *state)
         "     | AsyncFor(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)\n"
         "     | While(expr test, stmt* body, stmt* orelse)\n"
         "     | If(expr test, stmt* body, stmt* orelse)\n"
+        "     | Brrr(stmt* body)\n"
         "     | With(withitem* items, stmt* body, string? type_comment)\n"
         "     | AsyncWith(withitem* items, stmt* body, string? type_comment)\n"
         "     | Match(expr subject, match_case* cases)\n"
@@ -5622,6 +5628,8 @@ init_types(struct ast_state *state)
     if (!state->While_type) return -1;
     state->If_type = make_type(state, "If", state->stmt_type, If_fields, 3,
         "If(expr test, stmt* body, stmt* orelse)");
+    state->Brrr_type = make_type(state, "Brrr", state->stmt_type, Brrr_fields, 1,
+        "Brrr(stmt* body)");
     if (!state->If_type) return -1;
     state->With_type = make_type(state, "With", state->stmt_type, With_fields,
                                  3,
@@ -5702,6 +5710,7 @@ init_types(struct ast_state *state)
         "     | UnaryOp(unaryop op, expr operand)\n"
         "     | Lambda(arguments args, expr body)\n"
         "     | IfExp(expr test, expr body, expr orelse)\n"
+        "     | Brrr(expr body)\n"
         "     | Dict(expr* keys, expr* values)\n"
         "     | Set(expr* elts)\n"
         "     | ListComp(expr elt, comprehension* generators)\n"
@@ -5754,6 +5763,9 @@ init_types(struct ast_state *state)
     state->IfExp_type = make_type(state, "IfExp", state->expr_type,
                                   IfExp_fields, 3,
         "IfExp(expr test, expr body, expr orelse)");
+    state->Brrr_type = make_type(state, "Brrr", state->expr_type,
+                                  Brrr_fields, 1,
+        "Brrr(expr body)");
     if (!state->IfExp_type) return -1;
     state->Dict_type = make_type(state, "Dict", state->expr_type, Dict_fields,
                                  2,
@@ -6823,6 +6835,25 @@ _PyAST_Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset, int
 }
 
 stmt_ty
+_PyAST_Brrr(asdl_stmt_seq * body,
+           int lineno, int
+           col_offset, int end_lineno, int end_col_offset, PyArena *arena)
+{
+    stmt_ty p;
+    p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = Brrr_kind;
+    p->v.Brrr.body = body;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
+
+stmt_ty
 _PyAST_Try(asdl_stmt_seq * body, asdl_excepthandler_seq * handlers,
            asdl_stmt_seq * orelse, asdl_stmt_seq * finalbody, int lineno, int
            col_offset, int end_lineno, int end_col_offset, PyArena *arena)
@@ -7203,6 +7234,7 @@ _PyAST_IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int
     p->end_col_offset = end_col_offset;
     return p;
 }
+
 
 expr_ty
 _PyAST_Dict(asdl_expr_seq * keys, asdl_expr_seq * values, int lineno, int
@@ -8543,6 +8575,17 @@ ast2obj_stmt(struct ast_state *state, struct validator *vstate, void* _o)
                              ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->orelse, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case Brrr_kind:
+        tp = (PyTypeObject *)state->Brrr_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Brrr.body,
+                             ast2obj_stmt);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -17122,6 +17165,9 @@ astmodule_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddObjectRef(m, "If", state->If_type) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "Brrr", state->Brrr_type) < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "With", state->With_type) < 0) {

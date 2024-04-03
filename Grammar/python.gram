@@ -376,6 +376,14 @@ while_stmt[stmt_ty]:
     | invalid_while_stmt
     | 'while' a=named_expression ':' b=block c=[else_block] { _PyAST_While(a, b, c, EXTRA) }
 
+
+# brrr block
+# ---------------
+
+brrr_stmt[stmt_ty]:
+    | invalid_brrr_stmt
+    | 'brrr' &&':' b=block { _PyAST_Brrr(b, EXTRA) }
+
 # For statement
 # -------------
 
@@ -1359,6 +1367,9 @@ invalid_class_pattern:
         "positional patterns follow keyword patterns") }
 invalid_class_argument_pattern[asdl_pattern_seq*]:
     | [positional_patterns ','] keyword_patterns ',' a=positional_patterns { a }
+invalid_brrr_stmt:
+    | a='brrr' ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'brrr' statement on line %d", a->lineno) }
 invalid_if_stmt:
     | 'if' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='if' a=named_expression ':' NEWLINE !INDENT {

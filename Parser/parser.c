@@ -43,6 +43,7 @@ static KeywordToken *reserved_keywords[] = {
         {"with", 634},
         {"elif", 663},
         {"else", 664},
+        {"brrr", 665},
         {"None", 614},
         {"True", 613},
         {NULL, -1},
@@ -620,6 +621,7 @@ static char *soft_keywords[] = {
 #define _tmp_287_type 1533
 #define _tmp_288_type 1534
 #define _tmp_289_type 1535
+#define brrr_stmt_type 1536
 
 static mod_ty file_rule(Parser *p);
 static mod_ty interactive_rule(Parser *p);
@@ -683,6 +685,7 @@ static excepthandler_ty except_block_rule(Parser *p);
 static excepthandler_ty except_star_block_rule(Parser *p);
 static asdl_stmt_seq* finally_block_rule(Parser *p);
 static stmt_ty match_stmt_rule(Parser *p);
+static stmt_ty brrr_stmt_rule(Parser *p);
 static expr_ty subject_expr_rule(Parser *p);
 static match_case_ty case_block_rule(Parser *p);
 static expr_ty guard_rule(Parser *p);
@@ -855,6 +858,7 @@ static void *invalid_as_pattern_rule(Parser *p);
 static void *invalid_class_pattern_rule(Parser *p);
 static asdl_pattern_seq* invalid_class_argument_pattern_rule(Parser *p);
 static void *invalid_if_stmt_rule(Parser *p);
+static void *invalid_brrr_stmt_rule(Parser *p);
 static void *invalid_elif_stmt_rule(Parser *p);
 static void *invalid_else_stmt_rule(Parser *p);
 static void *invalid_while_stmt_rule(Parser *p);
@@ -2069,6 +2073,7 @@ simple_stmt_rule(Parser *p)
 //     | invalid_compound_stmt
 //     | &('def' | '@' | 'async') function_def
 //     | &'if' if_stmt
+//     | &'brr' brr_stmt
 //     | &('class' | '@') class_def
 //     | &('with' | 'async') with_stmt
 //     | &('for' | 'async') for_stmt
@@ -2147,6 +2152,27 @@ compound_stmt_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s compound_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'if' if_stmt"));
+    }
+    { // &'brrr' brrr_stmt
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'brrr' brrr_stmt"));
+        stmt_ty brrr_stmt_var;
+        if (
+            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 665)  // token='brrr'
+            &&
+            (brrr_stmt_var = brrr_stmt_rule(p))  // brrr_stmt
+        )
+        {
+            D(fprintf(stderr, "%*c+ compound_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'brrr' brrr_stmt"));
+            _res = brrr_stmt_var;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s compound_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'brrr' brrr_stmt"));
     }
     { // &('class' | '@') class_def
         if (p->error_indicator) {
@@ -7081,6 +7107,95 @@ try_stmt_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s try_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'try' &&':' block except_star_block+ else_block? finally_block?"));
+    }
+    _res = NULL;
+  done:
+    p->level--;
+    return _res;
+}
+
+
+// brrr_stmt:
+//     | invalid_brrr_stmt
+//     | 'brrr' &&':' block
+static stmt_ty
+brrr_stmt_rule(Parser *p)
+{
+    if (p->level++ == MAXSTACK) {
+        _Pypegen_stack_overflow(p);
+    }
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    stmt_ty _res = NULL;
+    int _mark = p->mark;
+    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    int _start_lineno = p->tokens[_mark]->lineno;
+    UNUSED(_start_lineno); // Only used by EXTRA macro
+    int _start_col_offset = p->tokens[_mark]->col_offset;
+    UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->call_invalid_rules) { // invalid_brrr_stmt
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> brrr_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_brrr_stmt"));
+        void *invalid_brrr_stmt_var;
+        if (
+            (invalid_brrr_stmt_var = invalid_brrr_stmt_rule(p))  // invalid_brrr_stmt
+        )
+        {
+            D(fprintf(stderr, "%*c+ brrrr_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_brrr_stmt"));
+            _res = invalid_brrr_stmt_var;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s brrr_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_brrr_stmt"));
+    }
+    { // 'brrr' ':' block
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> brrr_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'brrr' &&':' block"));
+        Token * _keyword;
+        Token * _literal;
+        asdl_stmt_seq* b;
+        if (
+            (_keyword = _PyPegen_expect_token(p, 665))  // token='brrr'
+            &&
+            (_literal = _PyPegen_expect_forced_token(p, 11, ":"))  // forced_token=':'
+            &&
+            (b = block_rule(p))  // block
+        )
+        {
+            D(fprintf(stderr, "%*c+ brrr_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'brrr' &&':' block"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_Brrr ( b , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+    D(fprintf(stderr, "%*c%s brrr_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+            p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'brrr' &&':' block"));
     }
     _res = NULL;
   done:
@@ -23962,6 +24077,91 @@ invalid_if_stmt_rule(Parser *p)
     p->level--;
     return _res;
 }
+
+
+// invalid_brrr_stmt:
+//     | 'brrr' ':' NEWLINE
+//     | 'brrr' ':' NEWLINE !INDENT
+static void *
+invalid_brrr_stmt_rule(Parser *p)
+{
+    if (p->level++ == MAXSTACK) {
+        _Pypegen_stack_overflow(p);
+    }
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    void * _res = NULL;
+    int _mark = p->mark;
+    { // 'brrr' ':' NEWLINE
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_brrr_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'brrr' NEWLINE"));
+        Token * _keyword;
+        Token * _literal;
+        Token * newline_var;
+        if (
+            (_keyword = _PyPegen_expect_token(p, 665))  // token='brrr'
+            &&
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))  // token='NEWLINE'
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_brrr_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'brrr'':' NEWLINE"));
+            _res = RAISE_SYNTAX_ERROR ( "expected ':'" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_brrr_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'brrr' ':' NEWLINE"));
+    }
+    { // 'brrr' ':' NEWLINE !INDENT
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_brrr_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'brrr' ':' NEWLINE !INDENT"));
+        Token * _literal;
+        Token * a;
+        Token * newline_var;
+        if (
+            (a = _PyPegen_expect_token(p, 665))  // token='brrr'
+            &&
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))  // token='NEWLINE'
+            &&
+            _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, INDENT)  // token=INDENT
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_brrr_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'brrr' ':' NEWLINE !INDENT"));
+            _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'brrr' statement on line %d" , a -> lineno );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_brrr_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'brrr' ':' NEWLINE !INDENT"));
+    }
+    _res = NULL;
+  done:
+    p->level--;
+    return _res;
+}
+
 
 // invalid_elif_stmt:
 //     | 'elif' named_expression NEWLINE
