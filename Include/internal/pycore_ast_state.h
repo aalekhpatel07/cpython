@@ -70,6 +70,7 @@ struct ast_state {
     PyObject *Gt_type;
     PyObject *IfExp_type;
     PyObject *If_type;
+    PyObject *Brrr_type;
     PyObject *ImportFrom_type;
     PyObject *Import_type;
     PyObject *In_singleton;
@@ -201,6 +202,7 @@ struct ast_state {
     PyObject *handlers;
     PyObject *id;
     PyObject *ifs;
+    PyObject *brrs;
     PyObject *is_async;
     PyObject *items;
     PyObject *iter;

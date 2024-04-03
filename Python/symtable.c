@@ -1821,6 +1821,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.If.orelse)
             VISIT_SEQ(st, stmt, s->v.If.orelse);
         break;
+    case Brrr_kind:
+        VISIT_SEQ(st, stmt, s->v.Brrr.body);
+        break;
     case Match_kind:
         VISIT(st, expr, s->v.Match.subject);
         VISIT_SEQ(st, match_case, s->v.Match.cases);

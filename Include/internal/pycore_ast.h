@@ -192,7 +192,7 @@ enum _stmt_kind {FunctionDef_kind=1, AsyncFunctionDef_kind=2, ClassDef_kind=3,
                   Raise_kind=17, Try_kind=18, TryStar_kind=19, Assert_kind=20,
                   Import_kind=21, ImportFrom_kind=22, Global_kind=23,
                   Nonlocal_kind=24, Expr_kind=25, Pass_kind=26, Break_kind=27,
-                  Continue_kind=28};
+                  Continue_kind=28, Brrr_kind=29};
 struct _stmt {
     enum _stmt_kind kind;
     union {
@@ -314,6 +314,10 @@ struct _stmt {
             asdl_stmt_seq *orelse;
             asdl_stmt_seq *finalbody;
         } Try;
+
+        struct {
+            asdl_stmt_seq *body;
+        } Brrr;
 
         struct {
             asdl_stmt_seq *body;

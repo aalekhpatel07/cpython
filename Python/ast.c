@@ -804,6 +804,9 @@ validate_stmt(struct validator *state, stmt_ty stmt)
             validate_body(state, stmt->v.If.body, "If") &&
             validate_stmts(state, stmt->v.If.orelse);
         break;
+    case Brrr_kind:
+        ret = validate_body(state, stmt->v.Brrr.body, "Brrr");
+        break;
     case With_kind:
         if (!validate_nonempty_seq(stmt->v.With.items, "items", "With"))
             return 0;
